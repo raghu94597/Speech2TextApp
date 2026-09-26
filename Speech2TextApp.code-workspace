@@ -1,11 +1,11 @@
 {
-	"folders": [
-		{
-			"path": "."
-		},
-		{
-			"path": "../SpeechToTextAppDemo"
-		}
-	],
-	"settings": {}
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "sstwithLLMaftertranscribe"
+        }
+    ],
+    "settings": {}
 }
