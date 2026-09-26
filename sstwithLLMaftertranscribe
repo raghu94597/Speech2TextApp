@@ -1,0 +1,77 @@
+import azure.cognitiveservices.speech as speechsdk   # Import Azure Speech SDK for speech-to-text
+import requests                                       # Import requests to call the local LLM API
+import threading                                      # Import threading (not used but often used for async speech)
+import time                                           # Import time for sleep in the wait loop
+
+# -----------------------------
+# CONFIG
+# -----------------------------
+speech_key = "58QvjM0JLs4NOqN41WkHUBAXBiXNee9TgKHss1P30iGiEIBX2VohJQQJ99CIACYeBjFXJ3w3AAAYACOGZDxt"  # Azure Speech API key (DO NOT COMMIT)
+speech_region = "eastus"                              # Azure region for the Speech service
+LLM_MODEL = "phi3"                                    # Name of the local LLM model to use
+
+transcript = []                                       # List to store recognized speech segments
+done = False                                          # Flag to indicate when the user says the stop phrase
+
+# -----------------------------
+# LLM PROCESSING
+# -----------------------------
+def process_transcript(full_text):                    # Function to send transcript to local LLM for summarization
+    payload = {                                       # JSON payload for the LLM API
+        "model": LLM_MODEL,                           # Model name (phi3)
+        "prompt": f"Here is the full transcript:\n\n{full_text}\n\nSummarize it clearly.",  # Prompt sent to LLM
+        "stream": False                               # Disable streaming responses
+    }
+    response = requests.post("http://localhost:11434/api/generate", json=payload)  # POST request to local LLM server
+    return response.json()["response"]                # Extract and return the summary text
+
+# -----------------------------
+# CALLBACK: When speech is recognized
+# -----------------------------
+def recognized(evt):                                  # Callback triggered whenever Azure recognizes speech
+    global done                                       # Access the global done flag
+
+    text = evt.result.text                            # Extract recognized text from the event
+    if not text:                                      # Ignore empty results
+        return
+
+    print("🗣", text)                                  # Print recognized speech to console
+
+    # Check for stop phrase
+    if "i'm done talking" in text.lower() or "i am done talking" in text.lower():
+        done = True                                   # Set flag to stop recognition loop
+        return
+
+    transcript.append(text)                           # Append recognized text to transcript list
+
+# -----------------------------
+# SETUP SPEECH RECOGNIZER
+# -----------------------------
+speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)  # Configure Azure Speech with key + region
+audio_config = speechsdk.AudioConfig(use_default_microphone=True)                      # Use default microphone as audio source
+recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)  # Create recognizer instance
+
+recognizer.recognized.connect(recognized)            # Attach callback to recognized event
+
+print("🎤 Listening continuously… say 'I'm done talking' when finished.\n")  # User instructions
+
+recognizer.start_continuous_recognition()            # Start continuous speech recognition
+
+# -----------------------------
+# NON-BLOCKING WAIT LOOP
+# -----------------------------
+while not done:                                      # Loop until user says stop phrase
+    time.sleep(0.1)                                   # Sleep briefly to avoid CPU overuse
+
+recognizer.stop_continuous_recognition()             # Stop recognition once done flag is set
+
+# -----------------------------
+# FINAL PROCESSING
+# -----------------------------
+full_text = "\n".join(transcript)                    # Combine all transcript segments into one string
+
+print("\n📄 Final Transcript:")                       # Print header
+print(full_text)                                     # Print full transcript
+
+print("\n🤖 LLM Summary:")                            # Print header for summary
+print(process_transcript(full_text))                  # Generate and print summary from local LLM
