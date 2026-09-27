@@ -1,12 +1,11 @@
 import azure.cognitiveservices.speech as speechsdk   # Import Azure Speech SDK for speech-to-text
 import requests                                       # Import requests to call the local LLM API
-import threading                                      # Import threading (not used but often used for async speech)
 import time                                           # Import time for sleep in the wait loop
 
 # -----------------------------
 # CONFIG
 # -----------------------------
-speech_key = "58QvjM0JLs4NOqN41WkHUBAXBiXNee9TgKHss1P30iGiEIBX2VohJQQJ99CIACYeBjFXJ3w3AAAYACOGZDxt"  # Azure Speech API key (DO NOT COMMIT)
+speech_key = "58QvjM0JLs4NOqN41WkHUBAXBiXNee9TgKHss1P30iGiEIBX2VohJQQJ99CIACYeBjFXJ3w3AAAYACOGZDxt"  
 speech_region = "eastus"                              # Azure region for the Speech service
 LLM_MODEL = "phi3"                                    # Name of the local LLM model to use
 
@@ -14,6 +13,7 @@ transcript = []                                       # List to store recognized
 done = False                                          # Flag to indicate when the user says the stop phrase
 
 # -----------------------------
+
 # LLM PROCESSING
 # -----------------------------
 def process_transcript(full_text):                    # Function to send transcript to local LLM for summarization
@@ -69,7 +69,6 @@ recognizer.stop_continuous_recognition()             # Stop recognition once don
 # FINAL PROCESSING
 # -----------------------------
 full_text = "\n".join(transcript)                    # Combine all transcript segments into one string
-
 print("\n📄 Final Transcript:")                       # Print header
 print(full_text)                                     # Print full transcript
 
